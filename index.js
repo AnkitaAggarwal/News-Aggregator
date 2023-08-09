@@ -39,12 +39,12 @@ function verifyToken(req, res, next) {
   const token = req.headers['authorization'];
 
   if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
+    return res.status(401).json({ message: 'Not Authorized' });
   }
 
   jwt.verify(token, process.env.secret_key, (err, decoded) => {
     if (err) {
-      return res.status(401).json({ message: 'Invalid token' });
+      return res.status(401).json({ message: 'Error in Authorization' });
     }
 
     req.userId = decoded.userId;
@@ -58,13 +58,18 @@ app.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // Validate the request
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Invalid request - username or password is missing' });
+    }
+
     // Check if the user already exists
     const userExists = users.find(user => user.username === username);
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
-`
-    // Hash the password`
+
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user
@@ -73,7 +78,7 @@ app.post('/register', async (req, res) => {
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error. Please try again later' });
   }
 });
 
@@ -82,10 +87,15 @@ app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // Validate the request
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Invalid request - username or password is missing' });
+    }
+
     // Find the user
     const user = users.find(user => user.username === username);
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'User not found' });
     }
 
     // Verify the password
@@ -138,11 +148,11 @@ app.get('/news', verifyToken, (req, res) => {
 
   // Fetch news articles using external APIs and filter based on user preferences
   // Implement this logic using async/await and Promises
-    asyncFetchHeadlines(userPreferences).then((filteredArticles) => {
+  asyncFetchHeadlines(userPreferences).then((filteredArticles) => {
     res.status(200).json({ articles: filteredArticles })
   }).catch((err) => {
     console.log(err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Failed to fetch news' });
   })
 });
 
