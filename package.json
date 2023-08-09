@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/mocha/bin/_mocha tests/*.js --reporter spec"
   },
   "repository": {
     "type": "git",
@@ -23,5 +23,10 @@
     "jsonwebtoken": "^9.0.0",
     "newsapi": "^2.4.1",
     "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "mocha": "^10.2.0",
+    "should": "^13.2.3",
+    "supertest": "^6.3.3"
   }
 }

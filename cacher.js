@@ -6,8 +6,10 @@ const NewsAPI = require('newsapi');
 const newsapi = new NewsAPI(process.env.newsapi_key);
 
 
- async function getCachedArticlesByPreferences(preferences) {
-  const preferencesKey = JSON.stringify(preferences);
+ async function getCachedArticlesByPreferences(query, preferences) {
+
+  // Generate a key for the given preferences
+  const preferencesKey = preferences.category + '-' + query;
 
   // Check if articles for the given preferences exist in the cache
   const cachedArticles = newsCache.get(preferencesKey);
@@ -20,7 +22,8 @@ const newsapi = new NewsAPI(process.env.newsapi_key);
 
   // Articles not found in the cache, fetch from news API
   let response = await newsapi.v2.topHeadlines({
-    q : preferences.query,
+    q : query,
+    category : preferences.category,
     language: 'en',
     country: 'in'
    })

@@ -20,13 +20,10 @@ const cacher = require('./cacher.js');
 
 // To query /v2/top-headlines
 // All options passed to topHeadlines are optional, but you need to include at least one of them
-var asyncFetchHeadlines = async ( userPreferences) => {
+var asyncFetchHeadlines = async (query, userPreferences) => {
 
-  const articles = await cacher.getCachedArticlesByPreferences( userPreferences);
-  // Use the retrieved articles
-  //console.log(articles);
-
-   return articles
+  const articles = await cacher.getCachedArticlesByPreferences(query, userPreferences);
+  return articles
 }
 
 // Helper function to generate JWT
@@ -76,7 +73,7 @@ app.post('/register', async (req, res) => {
     const user = { id: users.length + 1, username, password: hashedPassword };
     users.push(user);
 
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(200).json({ message: 'User registered successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Internal server error. Please try again later' });
   }
@@ -119,7 +116,7 @@ app.get('/preferences', verifyToken, (req, res) => {
   const userPreferences = preferences.get(req.userId);
 
   if (!userPreferences) {
-    return res.status(404).json({ message: 'Preferences not found' });
+    return res.status(200).json({ preferences : {}});
   }
 
   res.status(200).json({ preferences: userPreferences });
@@ -129,8 +126,12 @@ app.get('/preferences', verifyToken, (req, res) => {
 app.put('/preferences', verifyToken, (req, res) => {
   const updatedPreferences = req.body.preferences;
 
-  if (!updatedPreferences || Object.keys(updatedPreferences).length === 0) {
-    return res.status(400).json({ message: 'Preferences not provided' });
+  if (!updatedPreferences) {
+    return res.status(400).json({ message: 'Preferences not found' });
+  }
+
+  if (Object.keys(updatedPreferences).length === 0 || !updatedPreferences.category) {
+    return res.status(400).json({ message: 'Category not set. Available categories - business,entertainment,general,healthscience,sports,technology' });
   }
 
   preferences.set(req.userId, updatedPreferences);
@@ -140,15 +141,19 @@ app.put('/preferences', verifyToken, (req, res) => {
 
 // Fetch news articles based on the logged-in user's preferences
 app.get('/news', verifyToken, (req, res) => {
-  const userPreferences = preferences.get(req.userId);
 
-    if (!userPreferences) {
-        return res.status(404).json({ message: 'Preferences not found' });
-    }
+  // If query is not provided, default to empty string - this will fetch all news articles
+  // for the logged-in user's preferences
+  let query = req.body.query ?? ""
+
+  const userPreferences = preferences.get(req.userId);
+  if (!userPreferences) {
+      return res.status(400).json({ message: 'Preferences not found' });
+  }
 
   // Fetch news articles using external APIs and filter based on user preferences
   // Implement this logic using async/await and Promises
-  asyncFetchHeadlines(userPreferences).then((filteredArticles) => {
+  asyncFetchHeadlines(query, userPreferences).then((filteredArticles) => {
     res.status(200).json({ articles: filteredArticles })
   }).catch((err) => {
     console.log(err);
